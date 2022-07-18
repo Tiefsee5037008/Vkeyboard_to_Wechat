@@ -17,8 +17,8 @@ def do_wechat(text):
         wechat.open_wechat()
     elif text == 'img':
         wechat.read_img()
-    elif text == 'vedio':
-        wechat.read_vedio()
+    elif text == 'video':
+        wechat.read_video()
     elif text in wechat.emoji_dic:
         wechat.emoji(text)
     elif text == 'send':
