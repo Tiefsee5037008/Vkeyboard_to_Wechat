@@ -4,8 +4,8 @@ import time
 
 
 class Wechat:
-    img_name = r"C:\OneDrive\_Study\AI001\project\img\img.png"
-    vedio_name = r"C:\OneDrive\_Study\AI001\project\vedio\vedio.mp4"
+    img_name = r"C:\Users\Tiefsee2\project\img\img.png"
+    vedio_name = r"C:\Users\Tiefsee2\project\vedio\vedio.mp4"
 
     def __init__(self):
         self.filepic = r"img\filepic.png"
@@ -95,13 +95,13 @@ class Wechat:
 
 if __name__ == '__main__':
     wechat = Wechat()
-    # wechat.open_wechat()
-    # wechat.search_name("文件传输助手")
-    # wechat.read_txt("测试")
-    # wechat.send()
-    # wechat.read_img()
-    # wechat.send()
-    # wechat.read_vedio()
-    # wechat.send()
-    wechat.emoji(name="chigua")
+    wechat.open_wechat()
+    wechat.search_name("文件传输助手")
+    wechat.read_txt("测试")
+    wechat.send()
+    wechat.read_img()
+    wechat.send()
+    wechat.read_vedio()
+    wechat.send()
+    wechat.emoji(name="doge")
     wechat.send()
