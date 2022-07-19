@@ -5,8 +5,7 @@ import time
 
 class Wechat:
     img_name = r"C:\Users\Tiefsee2\project\img\img.png"
-    vedio_name = r"C:\Users\Tiefsee2\project\vedio\vedio.mp4"
-
+    video_name = r"C:\Users\Tiefsee2\project\video\video.mp4"
     def __init__(self):
         self.filepic = r"img\filepic.png"
         self.emojipic = r"img\emojipic.png"
@@ -77,9 +76,9 @@ class Wechat:
         pyautogui.press('enter')
         time.sleep(1)
 
-    def read_vedio(self, vedio=vedio_name):
+    def read_video(self, video=video_name):
         self.mapping_img(self.filepic, 'single')
-        pyperclip.copy(vedio)
+        pyperclip.copy(video)
         time.sleep(1)
         pyautogui.hotkey('ctrl', 'v')
         time.sleep(1)
@@ -101,7 +100,7 @@ if __name__ == '__main__':
     wechat.send()
     wechat.read_img()
     wechat.send()
-    wechat.read_vedio()
+    wechat.read_video()
     wechat.send()
     wechat.emoji(name="doge")
     wechat.send()
