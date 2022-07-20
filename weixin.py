@@ -91,8 +91,7 @@ class Wechat:
         self.mapping_img(self.emoji_dic[name], 'single')
         time.sleep(1)
 
-
-if __name__ == '__main__':
+def Main():
     wechat = Wechat()
     wechat.open_wechat()
     wechat.search_name("文件传输助手")
@@ -104,3 +103,7 @@ if __name__ == '__main__':
     wechat.send()
     wechat.emoji(name="doge")
     wechat.send()
+    wechat.close_wechat()
+
+if __name__ == '__main__':
+   Main()

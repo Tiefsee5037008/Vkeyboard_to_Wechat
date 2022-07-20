@@ -4,11 +4,13 @@ from cvzone.HandTrackingModule import HandDetector  # 手部跟踪模块
 import time  # 用于计时
 import numpy as np
 import cvzone
-#from pynput.keyboard import Controller  # 用于模拟键盘输入，暂时废弃
-
+# from pynput.keyboard import Controller  # 用于模拟键盘输入，暂时废弃
+import weixin
 from weixin import Wechat  # 控制微信的模块
 
 wechat = Wechat()
+
+
 def Exit():
     """
     用于实现到程序出口的跳转
@@ -37,6 +39,7 @@ def do_wechat(text):
     else:
         wechat.read_txt(finalText)  # 当遇到未识别指令时，统一认为是文本输入
 
+
 cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 
 # 设置摄像头属性
@@ -45,12 +48,11 @@ cap.set(4, 720)
 # cap.set(5, 60)
 cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
 
-#设置手部检测器属性
+# 设置手部检测器属性
 detector = HandDetector(detectionCon=0.8, maxHands=2)
 
-#特殊字符列表
-specialList = ['\b', 'Clear', 'Space', 'CapsLk', 'Shift', 'Enter', 'Esc']
-
+# 特殊字符列表
+specialList = ['Backspace', 'Clear', 'Space', 'CapsLk', 'Shift', 'Enter', 'Esc']
 
 # def is_special(ch):
 #     return ch in specialList
@@ -68,6 +70,7 @@ class Button:
     """
     按钮类
     """
+
     def __init__(self, pos, name, size=None):
         """
         按钮类的构造函数，其中push域用来指示按压状态，初始时为False（未按压）
@@ -117,11 +120,34 @@ for j in range(len(keys)):
         elif key == 'Enter':
             buttonList.append(Button([200 * x + 30, 100 * j + 50], key, [120, 60]))
         elif key == 'Esc':
-            buttonList.append(Button(Clear.next_position([0, 100]), key, [100, 60]))  #将Esc设置在Clear正下方
+            buttonList.append(Button(Clear.next_position([0, 100]), key, [100, 60]))  # 将Esc设置在Clear正下方
         else:  # 普通按钮放在最后
             buttonList.append(Button([100 * x + 30, 100 * j + 50], key))
 
 keyboard_visible = True  # 用于控制键盘是否可见
+
+# Shift键对应的字符集映射
+Top = {'1': '!', '2': '@', '3': '#', '4': '$', '5': '%', '6': '^', '7': '&', '8': '*', '9': '(', '0': ')',
+       ';': ':', '\'': '""',
+       ',': '<', '.': '>', '/': '?'}
+
+
+def realChar(ch):
+    """
+    根据大小写锁定和Shift按键状态确定真实字符
+    特殊字符返回本身
+    :param ch: 字符名称，应是字符串，一般对应button.name域
+    :return: 结合CapsLk和Shift得到的实际字符
+    """
+    if ch in specialList:
+        return ch
+    elif ch.isalpha():
+        return ch.upper() if CapsLk.push else ch.lower()
+    elif ch in Top:
+        return Top[ch] if Shift.push else ch
+    else:
+        raise Exception('Unidentified character')
+
 
 def drawAll(img, button_list):
     """
@@ -138,11 +164,11 @@ def drawAll(img, button_list):
         cvzone.cornerRect(img1, (x, y, w, h), 20, rt=0)
         if button.push:  # 按压状态按钮的绘制
             cv2.rectangle(img1, button.pos, (x + w, y + h), (127, 64, 0), cv2.FILLED)
-        else:            # 未按压状态按钮的绘制
+        else:  # 未按压状态按钮的绘制
             cv2.rectangle(img1, button.pos, (x + w, y + h), (255, 144, 30), cv2.FILLED)
-        cv2.putText(img1, button.name, (x + 10, y + 30), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 0), 2)
+        cv2.putText(img1, realChar(button.name), (x + 10, y + 30), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 0), 2)
     mask = img1.astype(bool)  # 生成掩码
-    out[mask] = cv2.addWeighted(img, alpha, img1, 1-alpha, 0)[mask]  #加权混合，实现透明效果
+    out[mask] = cv2.addWeighted(img, alpha, img1, 1 - alpha, 0)[mask]  # 加权混合，实现透明效果
     return out
 
 
@@ -153,30 +179,16 @@ prey = 0
 # 用于设置时间cd
 tCur = 0
 tPre = 0
-#Shift键对应的字符集映射
-Top = {'1': '!', '2': '@', '3': '#', '4': '$', '5': '%', '6': '^', '7': '&', '8': '*', '9': '(', '0': ')',
-       ';': ':', '\'': '""',
-       ',': '<', '.': '>', '/': '?'}
+fingerlist = [[1, 0, 1, 1, 1],
+              [0, 1, 0, 0, 0]]
+fingerindex = None
+time_state = False
 
-def realChar(ch):
-    """
-    根据大小写锁定和Shift按键状态确定真实字符
-    特殊字符应提前单独处理，不应运用此函数
-    :param ch: 字符名称，应是字符串，一般对应button.name域
-    :return: 结合CapsLk和Shift得到的实际字符
-    """
-    if ch.isalpha():
-        return ch.upper() if CapsLk.push else ch.lower()
-    elif ch not in specialList:
-        return Top[ch] if Shift.push else ch
-    else:
-        return ch
-
-
-if __name__ == '__main__':
+if __name__ == '__main__':  # 程序入口
     while cap.isOpened():  # 检验摄像头状态
         success, img = cap.read()
-        if not success: break  # 检验图片是否成功接收
+        if not success:  # 检验图片是否成功接收
+            break
         img = cv2.flip(img, 1)  # 翻转图像，使自身和摄像头中的自己呈镜像关系
         img = detector.findHands(img)  # 手部检测方法，找到手部位置
         lmList, _ = detector.findPosition(img)  # 获得手部各关节位置
@@ -188,7 +200,8 @@ if __name__ == '__main__':
                     w, h = button.size
                     if x < lmList[8][0] < x + w and y < lmList[8][1] < y + h:  # 选中条件：食指指尖在按钮矩形框范围内
                         cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 255), cv2.FILLED)  # 选中后按钮框高亮显示
-                        cv2.putText(img, button.name, (x + 10, y + 30), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 0), 2)  # 高亮时文字深色显示
+                        cv2.putText(img, realChar(button.name), (x + 10, y + 30), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 0),
+                                    2)  # 高亮时文字深色显示
                         d1, _, _ = detector.findDistance(8, 12, img, draw=False)  # 获取食指和中指指尖距离
                         d2, _, _ = detector.findDistance(7, 11, img, draw=False)  # 获取食指和中指远指间关节关节距离
                         fingerUpList = detector.fingersUp()  # 获取手指向上状态
@@ -202,8 +215,10 @@ if __name__ == '__main__':
                             # 第二个条件为时间阈值：两次点击间要隔一定时间（单位：秒）
                             if (num1 - prex) * (num1 - prex) + (num2 - prey) * (num2 - prey) > 200 and tCur - tPre >= 1:
                                 tPre = tCur  # 更新时间戳
-                                cv2.rectangle(img, button.pos, (x + w, y + h), (255, 255, 0), cv2.FILLED)  # 绘制输入成功高亮状态（较短暂，可靠反差色或延长时间改善）
-                                cv2.putText(img, button.name, (x + 10, y + 40), cv2.FONT_HERSHEY_PLAIN, 3, (0, 0, 0), 3)
+                                cv2.rectangle(img, button.pos, (x + w, y + h), (255, 255, 0),
+                                              cv2.FILLED)  # 绘制输入成功高亮状态（较短暂，可靠反差色或延长时间改善）
+                                cv2.putText(img, realChar(button.name), (x + 10, y + 40), cv2.FONT_HERSHEY_PLAIN, 3,
+                                            (0, 0, 0), 3)
                                 # 优先处理特殊按钮
                                 if button.name == 'Clear':
                                     count = 0
@@ -215,8 +230,10 @@ if __name__ == '__main__':
                                 elif button.name == 'Enter':
                                     do_wechat(finalText)
                                 elif button.name == 'Esc':
-                                    a = pg.confirm(text='Sure to Exit?', title='Exit Confirm', buttons=['OK', 'Cancel'])  # 退出前确认
-                                    if a == 'OK': Exit()
+                                    a = pg.confirm(text='Sure to Exit?', title='Exit Confirm',
+                                                   buttons=['OK', 'Cancel'])  # 退出前确认
+                                    if a == 'OK':
+                                        Exit()
                                 elif button.name == 'Space':
                                     count += 1
                                     finalText += ' '
@@ -232,28 +249,39 @@ if __name__ == '__main__':
                 # 输出调试信息
                 print("\r当前文本：", finalText, end='')
                 fingerUpList = detector.fingersUp()
-                cv2.putText(img, str(fingerUpList), (20, 700), cv2.FONT_HERSHEY_PLAIN, 2, (0,0,0), 2)
+                cv2.putText(img, str(fingerUpList), (20, 700), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 0), 2)
                 d1, _, _ = detector.findDistance(8, 12, img, draw=False)
                 d2, _, _ = detector.findDistance(7, 11, img, draw=False)
                 cv2.putText(img, 'd1/d2=' + str(d1 / d2), (50, 550), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 0), 2)
 
-                if fingerUpList == [1,0,0,0,1]: # 隐藏键盘条件：水平的“六”字手势
+                if fingerUpList == [1, 0, 0, 0, 1]:  # 隐藏键盘条件：水平的“六”字手势
                     keyboard_visible = False
             #  输出用户提示信息
             fps, img = fpsReader.update(img, pos=(10, 40), color=(0, 255, 0), scale=2, thickness=2)  # 获取FPS
             cv2.putText(img, 'count:' + str(count), (1010, 670), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 0), 2)  # 显示字符计数
 
             cv2.rectangle(img, (20, 550), (1000, 650), (255, 200, 135), cv2.FILLED)  # 绘制输入框背景长矩形
-            cv2.putText(img, finalText, (20, 590), cv2.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 4)  #绘制用户输入文本
-        else:  #进入手势控制模式
+            cv2.putText(img, finalText, (20, 590), cv2.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 4)  # 绘制用户输入文本
+        elif lmList:  # 进入手势控制模式
             fingerUpList = detector.fingersUp()
             cv2.putText(img, str(fingerUpList), (20, 700), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 0), 2)
-            if fingerUpList == [1,0,1,1,1]:  # 显示键盘条件：水平的"OK"手势
-                keyboard_visible = True
-            else:  #其他的控制手势（待添加）
-                pass
+            tCur = time.perf_counter()
+            if fingerUpList in fingerlist:
+                if not time_state or fingerindex != fingerlist.index(fingerUpList):  # 当不在计时中或者切换手势的时候，重新计时
+                    tPre = tCur
+                    time_state = True
+                    fingerindex = fingerlist.index(fingerUpList)
+                if tCur - tPre > 1:
+                    if fingerUpList == [1, 0, 1, 1, 1]:  # 显示键盘条件：水平的"OK"手势
+                        keyboard_visible = True
+                    elif fingerUpList == [0, 1, 0, 0, 0]:  # "1"字手势，执行weixin.py的演示程序
+                        weixin.Main()
+                    else:  # 其他的控制手势（待添加）
+                        pass
+                    time_state = False
+
         cv2.namedWindow("img", cv2.WINDOW_FREERATIO)  # 设置窗口为自由纵横比
-        cv2.imshow("img", img)  #  显示当前帧最终画面
+        cv2.imshow("img", img)  # 显示当前帧最终画面
 
         # 退出条件：27对应Esc键，第二个条件对应手动关闭窗口（右上角）
         if cv2.waitKey(1) & 0xFF == 27 or cv2.getWindowProperty("img", cv2.WND_PROP_VISIBLE) <= 0:
