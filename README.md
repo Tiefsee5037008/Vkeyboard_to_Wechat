@@ -21,4 +21,5 @@ This project is done by some college students only to meet their course's requir
 	+ `img`：载入特定图片
 	+ `video`：载入特定视频
 	+ `send`:发送消息（需要设置对应快捷键为Enter键）
+- 在显示键盘状态下，做水平“六”字手势隐藏键盘；在隐藏键盘状态下，做水平“OK”手势显示键盘（默认显示键盘）
 - `img`目录下是作为识别目标的各图标，如果出现识别不了的情况可以在本地环境下重新采样
