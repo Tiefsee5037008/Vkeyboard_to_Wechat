@@ -1,9 +1,8 @@
-# 默认忽略的文件
-/shelf/
-/workspace.xml
-/.ipynb_checkpoints
- *.pyc
- /.idea/
- /.ipynb_checkpoints
- /__pycache__/
- 
+#默认忽略的文件
+*.pyc
+*.xml
+.git/
+/.idea/
+/.ipynb_checkpoints/
+/__pycache__/
+.gitignore
