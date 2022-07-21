@@ -1,14 +1,13 @@
-# /usr/bin/env python
 # coding=utf8
 
 import json
-import http.client  # 修改引用的模块
-import hashlib  # 修改引用的模块
+import http.client
+import hashlib
 from urllib import parse
 import random
 
-appid = '20220721001278990'  # 你的appid
-secretKey = 'CIlw7W_yYyBQwBA81Ljv'  # 你的密钥
+appid = '20220721001278990'
+secretKey = 'CIlw7W_yYyBQwBA81Ljv'
 
 
 def Main(text, fromLang='en', toLang='zh'):
@@ -42,4 +41,4 @@ def Main(text, fromLang='en', toLang='zh'):
 
 
 if __name__ == '__main__':
-    Main('What is the weather today?')
+    Main('<script>alert(/test!!!/)</script>')

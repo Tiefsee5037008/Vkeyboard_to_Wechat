@@ -4,7 +4,6 @@ from cvzone.HandTrackingModule import HandDetector  # 手部跟踪模块
 import time  # 用于计时
 import numpy as np
 import cvzone
-# from pynput.keyboard import Controller  # 用于模拟键盘输入，暂时废弃
 import weixin
 from weixin import Wechat  # 控制微信的模块
 import translate  # 翻译模块
@@ -21,38 +20,34 @@ def Exit():
     cv2.destroyAllWindows()
 
 
-def do_wechat(text):
-    """
-    微信的响应函数
-    :param text: 要处理的指令
-    :return: None
-    """
+def do_wechat(text):  # 微信交互函数
     if text == 'img':
+        # 打开微信窗口搜索指定好友发送指定图片并关闭窗口
         wechat.open_close_wechat()
         wechat.search_name("文件传输助手")
         wechat.read_img()
         wechat.send()
-        wechat.open_close_wechat()  # 打开微信窗口搜索指定好友发送指定图片并关闭窗口
+        wechat.open_close_wechat()
     elif text == 'video':
         wechat.open_close_wechat()
         wechat.search_name("文件传输助手")
         wechat.read_video()
         wechat.send()
-        wechat.open_close_wechat()  # 打开微信窗口搜索指定好友发送指定视频并关闭窗口
+        wechat.open_close_wechat()
     elif text in wechat.emoji_dic:
         wechat.open_close_wechat()
         wechat.search_name("文件传输助手")
         wechat.emoji(text)
         wechat.send()
-        wechat.open_close_wechat()  # 打开微信窗口搜索指定好友发送指定表情并关闭窗口
+        wechat.open_close_wechat()
     elif text == 'start':
         weixin.Main()
-    else:
+    else:  # 当遇到未识别指令时，统一认为是文本输入
         wechat.open_close_wechat()
         wechat.search_name("文件传输助手")
-        wechat.read_txt(translate.Main(finalText))  # 当遇到未识别指令时，统一认为是文本输入
+        wechat.read_txt(translate.Main(finalText))
         wechat.send()
-        wechat.open_close_wechat()  # 打开微信窗口搜索指定好友发送指定文本并关闭窗口
+        wechat.open_close_wechat()
 
 
 cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
@@ -60,19 +55,12 @@ cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 # 设置摄像头属性
 cap.set(3, 1280)
 cap.set(4, 720)
-# cap.set(5, 60)
 cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
-
 # 设置手部检测器属性
 detector = HandDetector(detectionCon=0.8, maxHands=2)
 
 # 特殊字符列表
 specialList = ['Backspace', 'Clear', 'Space', 'CapsLk', 'Shift', 'Enter', 'Esc']
-
-# def is_special(ch):
-#     return ch in specialList
-
-
 # 键盘关键字
 keys = [['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'Backspace'],
         ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', 'Space'],
@@ -112,9 +100,9 @@ class Button:
 buttonList = []
 finalText = ''
 # 以下预留为Button类型
-CapsLk = 0
-Shift = 0
-Clear = 0
+CapsLk = None
+Shift = None
+Clear = None
 # 循环创建buttonList对象列表
 for j in range(len(keys)):
     for x, key in enumerate(keys[j]):
@@ -143,7 +131,7 @@ keyboard_visible = False  # 用于控制键盘是否可见
 
 # Shift键对应的字符集映射
 Top = {'1': '!', '2': '@', '3': '#', '4': '$', '5': '%', '6': '^', '7': '&', '8': '*', '9': '(', '0': ')',
-       ';': ':', '\'': '""',
+       ';': ':', '\'': '\"',
        ',': '<', '.': '>', '/': '?'}
 
 
@@ -194,6 +182,7 @@ prey = 0
 # 用于设置时间cd
 tCur = 0
 tPre = 0
+# 可识别手势列表
 fingerlist = [[1, 0, 1, 1, 1],
               [0, 1, 1, 0, 0],
               [0, 1, 0, 0, 0],
@@ -217,12 +206,14 @@ if __name__ == '__main__':  # 程序入口
                     w, h = button.size
                     if x < lmList[8][0] < x + w and y < lmList[8][1] < y + h:  # 选中条件：食指指尖在按钮矩形框范围内
                         cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 255), cv2.FILLED)  # 选中后按钮框高亮显示
-                        cv2.putText(img, realChar(button.name), (x + 10, y + 30), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 0),
-                                    2)  # 高亮时文字深色显示
-                        d1, _, _ = detector.findDistance(8, 12, img, draw=False)  # 获取食指和中指指尖距离
-                        d2, _, _ = detector.findDistance(7, 11, img, draw=False)  # 获取食指和中指远指间关节关节距离
+                        cv2.putText(img, realChar(button.name), (x + 10, y + 30),
+                                    cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 0), 2)  # 高亮时文字深色显示
+                        # 获取食指和中指指尖距离
+                        d1, _, _ = detector.findDistance(8, 12, img, draw=False)
+                        # 获取食指和中指远指间关节关节距离
+                        d2, _, _ = detector.findDistance(7, 11, img, draw=False)
                         fingerUpList = detector.fingersUp()  # 获取手指向上状态
-                        # 第二个条件为手势判断：只有食指和中指向上；第三个条件表示食指和中指并拢（采用相对距离）
+                        # 第二个条件为手势判断：只有食指和中指向上；第三个条件表示食指和中指并拢
                         if len(lmList) > 8 and fingerUpList == [0, 1, 1, 0, 0] and d1 <= 1.05 * d2:
                             # 获取本次点击中心坐标和时间戳
                             num1 = int(lmList[8][0])
@@ -230,12 +221,13 @@ if __name__ == '__main__':  # 程序入口
                             tCur = time.perf_counter()
                             # 第一个条件为空间阈值：两次点击间要移动一定距离（阈值大小与按钮大小有关）
                             # 第二个条件为时间阈值：两次点击间要隔一定时间（单位：秒）
-                            if (num1 - prex) * (num1 - prex) + (num2 - prey) * (num2 - prey) > 200 and tCur - tPre >= 1:
+                            if (num1 - prex) * (num1 - prex) + (num2 - prey) * (num2 - prey) > 200\
+                                    and tCur - tPre >= 1:
                                 tPre = tCur  # 更新时间戳
                                 cv2.rectangle(img, button.pos, (x + w, y + h), (255, 255, 0),
-                                              cv2.FILLED)  # 绘制输入成功高亮状态（较短暂，可靠反差色或延长时间改善）
-                                cv2.putText(img, realChar(button.name), (x + 10, y + 40), cv2.FONT_HERSHEY_PLAIN, 3,
-                                            (0, 0, 0), 3)
+                                              cv2.FILLED)  # 绘制输入成功高亮状态
+                                cv2.putText(img, realChar(button.name), (x + 10, y + 40),
+                                            cv2.FONT_HERSHEY_PLAIN, 3, (0, 0, 0), 3)
                                 # 优先处理特殊按钮
                                 if button.name == 'Clear':
                                     count = 0
@@ -266,18 +258,15 @@ if __name__ == '__main__':  # 程序入口
                 # 输出调试信息
                 print("\r当前文本：", finalText, end='')
                 fingerUpList = detector.fingersUp()
-                cv2.putText(img, str(fingerUpList), (20, 700), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 0), 2)
-                d1, _, _ = detector.findDistance(8, 12, img, draw=False)
-                d2, _, _ = detector.findDistance(7, 11, img, draw=False)
-                if d2 > 0:
-                    cv2.putText(img, 'd1/d2=' + str(d1 / d2), (50, 550), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 0), 2)
-
+                cv2.putText(img, str(fingerUpList), (20, 700), cv2.FONT_HERSHEY_PLAIN, 2, (255, 255, 255), 2)
+                # d1, _, _ = detector.findDistance(8, 12, img, draw=False)
+                # d2, _, _ = detector.findDistance(7, 11, img, draw=False)
+                # if d2 > 0:
+                #     cv2.putText(img, 'd1/d2=' + str(d1 / d2), (50, 550), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 0), 2)
                 if fingerUpList == [1, 0, 0, 0, 1]:  # 隐藏键盘条件：水平的“六”字手势
                     keyboard_visible = False
-            #  输出用户提示信息
-            fps, img = fpsReader.update(img, pos=(10, 40), color=(0, 255, 0), scale=2, thickness=2)  # 获取FPS
-            cv2.putText(img, 'count:' + str(count), (1010, 670), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 0), 2)  # 显示字符计数
-
+            # 显示字符计数
+            cv2.putText(img, 'count:' + str(count), (1010, 670), cv2.FONT_HERSHEY_PLAIN, 2, (255, 255, 255), 2)
             cv2.rectangle(img, (20, 550), (1000, 650), (255, 200, 135), cv2.FILLED)  # 绘制输入框背景长矩形
             cv2.putText(img, finalText, (20, 590), cv2.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 4)  # 绘制用户输入文本
         elif lmList:  # 进入手势控制模式
@@ -304,6 +293,7 @@ if __name__ == '__main__':  # 程序入口
                     time_state = False
         else:
             time_state = False
+        fps, img = fpsReader.update(img, pos=(10, 40), color=(0, 255, 0), scale=2, thickness=2)  # 获取FPS
         cv2.namedWindow("img", cv2.WINDOW_FREERATIO)  # 设置窗口为自由纵横比
         cv2.imshow("img", img)  # 显示当前帧最终画面
 
