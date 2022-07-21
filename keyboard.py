@@ -7,8 +7,9 @@ import cvzone
 # from pynput.keyboard import Controller  # 用于模拟键盘输入，暂时废弃
 import weixin
 from weixin import Wechat  # 控制微信的模块
-
+import translate  # 翻译模块
 wechat = Wechat()
+background = cv2.imread(r'backgrounds\1.jpg')
 
 
 def Exit():
@@ -26,18 +27,32 @@ def do_wechat(text):
     :param text: 要处理的指令
     :return: None
     """
-    if text == 'open':
-        wechat.open_wechat()
-    elif text == 'img':
+    if text == 'img':
+        wechat.open_close_wechat()
+        wechat.search_name("文件传输助手")
         wechat.read_img()
-    elif text == 'video':
-        wechat.read_video()
-    elif text in wechat.emoji_dic:
-        wechat.emoji(text)
-    elif text == 'send':
         wechat.send()
+        wechat.open_close_wechat()  # 打开微信窗口搜索指定好友发送指定图片并关闭窗口
+    elif text == 'video':
+        wechat.open_close_wechat()
+        wechat.search_name("文件传输助手")
+        wechat.read_video()
+        wechat.send()
+        wechat.open_close_wechat()  # 打开微信窗口搜索指定好友发送指定视频并关闭窗口
+    elif text in wechat.emoji_dic:
+        wechat.open_close_wechat()
+        wechat.search_name("文件传输助手")
+        wechat.emoji(text)
+        wechat.send()
+        wechat.open_close_wechat()  # 打开微信窗口搜索指定好友发送指定表情并关闭窗口
+    elif text == 'start':
+        weixin.Main()
     else:
-        wechat.read_txt(finalText)  # 当遇到未识别指令时，统一认为是文本输入
+        wechat.open_close_wechat()
+        wechat.search_name("文件传输助手")
+        wechat.read_txt(translate.Main(finalText))  # 当遇到未识别指令时，统一认为是文本输入
+        wechat.send()
+        wechat.open_close_wechat()  # 打开微信窗口搜索指定好友发送指定文本并关闭窗口
 
 
 cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
@@ -124,7 +139,7 @@ for j in range(len(keys)):
         else:  # 普通按钮放在最后
             buttonList.append(Button([100 * x + 30, 100 * j + 50], key))
 
-keyboard_visible = True  # 用于控制键盘是否可见
+keyboard_visible = False  # 用于控制键盘是否可见
 
 # Shift键对应的字符集映射
 Top = {'1': '!', '2': '@', '3': '#', '4': '$', '5': '%', '6': '^', '7': '&', '8': '*', '9': '(', '0': ')',
@@ -163,7 +178,7 @@ def drawAll(img, button_list):
         w, h = button.size
         cvzone.cornerRect(img1, (x, y, w, h), 20, rt=0)
         if button.push:  # 按压状态按钮的绘制
-            cv2.rectangle(img1, button.pos, (x + w, y + h), (127, 64, 0), cv2.FILLED)
+            cv2.rectangle(img1, button.pos, (x + w, y + h), (0, 255, 255), cv2.FILLED)
         else:  # 未按压状态按钮的绘制
             cv2.rectangle(img1, button.pos, (x + w, y + h), (255, 144, 30), cv2.FILLED)
         cv2.putText(img1, realChar(button.name), (x + 10, y + 30), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 0), 2)
@@ -180,7 +195,9 @@ prey = 0
 tCur = 0
 tPre = 0
 fingerlist = [[1, 0, 1, 1, 1],
-              [0, 1, 0, 0, 0]]
+              [0, 1, 1, 0, 0],
+              [0, 1, 0, 0, 0],
+              [0, 1, 1, 1, 0]]
 fingerindex = None
 time_state = False
 
@@ -191,7 +208,7 @@ if __name__ == '__main__':  # 程序入口
             break
         img = cv2.flip(img, 1)  # 翻转图像，使自身和摄像头中的自己呈镜像关系
         img = detector.findHands(img)  # 手部检测方法，找到手部位置
-        lmList, _ = detector.findPosition(img)  # 获得手部各关节位置
+        lmList, box = detector.findPosition(img)  # 获得手部各关节位置
         if keyboard_visible:
             img = drawAll(img, buttonList)  # 在当前帧重新绘制全部按钮
             if lmList:  # 检测到手
@@ -252,7 +269,8 @@ if __name__ == '__main__':  # 程序入口
                 cv2.putText(img, str(fingerUpList), (20, 700), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 0), 2)
                 d1, _, _ = detector.findDistance(8, 12, img, draw=False)
                 d2, _, _ = detector.findDistance(7, 11, img, draw=False)
-                cv2.putText(img, 'd1/d2=' + str(d1 / d2), (50, 550), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 0), 2)
+                if d2 > 0:
+                    cv2.putText(img, 'd1/d2=' + str(d1 / d2), (50, 550), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 0), 2)
 
                 if fingerUpList == [1, 0, 0, 0, 1]:  # 隐藏键盘条件：水平的“六”字手势
                     keyboard_visible = False
@@ -271,15 +289,21 @@ if __name__ == '__main__':  # 程序入口
                     tPre = tCur
                     time_state = True
                     fingerindex = fingerlist.index(fingerUpList)
-                if tCur - tPre > 1:
+                if tCur - tPre >= 1:  # 防止误触
                     if fingerUpList == [1, 0, 1, 1, 1]:  # 显示键盘条件：水平的"OK"手势
                         keyboard_visible = True
-                    elif fingerUpList == [0, 1, 0, 0, 0]:  # "1"字手势，执行weixin.py的演示程序
-                        weixin.Main()
+                    elif fingerUpList == [0, 1, 0, 0, 0]:  # "1"字手势，发送图片
+                        do_wechat('img')
+                    elif fingerUpList == [0, 1, 1, 0, 0]:  # "2"字手势，发送视频
+                        do_wechat('video')
+                    elif fingerUpList == [0, 1, 1, 1, 0]:  # "3"字手势，发送“doge”
+                        do_wechat('doge')
+
                     else:  # 其他的控制手势（待添加）
                         pass
                     time_state = False
-
+        else:
+            time_state = False
         cv2.namedWindow("img", cv2.WINDOW_FREERATIO)  # 设置窗口为自由纵横比
         cv2.imshow("img", img)  # 显示当前帧最终画面
 
