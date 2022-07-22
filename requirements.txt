@@ -1,0 +1,7 @@
+pyautogui
+pyperclip
+cvzone==1.4.1
+mediapipe==0.8.7
+typing-extensions
+requests
+protobuf==3.20

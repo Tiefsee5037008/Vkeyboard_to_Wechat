@@ -8,7 +8,6 @@ import weixin
 from weixin import Wechat  # 控制微信的模块
 import translate  # 翻译模块
 wechat = Wechat()
-background = cv2.imread(r'backgrounds\1.jpg')
 
 
 def Exit():
@@ -24,19 +23,19 @@ def do_wechat(text):  # 微信交互函数
     if text == 'img':
         # 打开微信窗口搜索指定好友发送指定图片并关闭窗口
         wechat.open_close_wechat()
-        wechat.search_name("文件传输助手")
+        wechat.search_name()
         wechat.read_img()
         wechat.send()
         wechat.open_close_wechat()
     elif text == 'video':
         wechat.open_close_wechat()
-        wechat.search_name("文件传输助手")
+        wechat.search_name()
         wechat.read_video()
         wechat.send()
         wechat.open_close_wechat()
     elif text in wechat.emoji_dic:
         wechat.open_close_wechat()
-        wechat.search_name("文件传输助手")
+        wechat.search_name()
         wechat.emoji(text)
         wechat.send()
         wechat.open_close_wechat()
@@ -44,7 +43,7 @@ def do_wechat(text):  # 微信交互函数
         weixin.Main()
     else:  # 当遇到未识别指令时，统一认为是文本输入
         wechat.open_close_wechat()
-        wechat.search_name("文件传输助手")
+        wechat.search_name()
         wechat.read_txt(translate.Main(finalText))
         wechat.send()
         wechat.open_close_wechat()

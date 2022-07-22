@@ -26,8 +26,10 @@ class Wechat:
         time.sleep(cd)
 
     @staticmethod
-    def search_name(name):
+    def search_name(name=None):
         # 搜索好友
+        if name is None:
+            name = "文件传输助手"
         pyautogui.hotkey('ctrl', 'f')
         time.sleep(cd)
         # 复制好友昵称到粘贴板
@@ -98,7 +100,7 @@ class Wechat:
 def Main():
     wechat = Wechat()
     wechat.open_close_wechat()
-    wechat.search_name("文件传输助手")
+    wechat.search_name()
     wechat.read_txt("测试")
     wechat.send()
     wechat.read_img()
