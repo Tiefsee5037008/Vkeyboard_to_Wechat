@@ -24,6 +24,7 @@ pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 - `main.py`为程序入口
 + 键盘模式（默认模式）下：
     - 键盘点击的触发条件是中指和食指伸直且并拢（向上），其他手指弯曲
+  
     ![Input](readme.assets/Input.png)
   
   （推荐单指移动，双指点击）
@@ -39,10 +40,14 @@ pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
         + `start`：上面几个加起来（一整套演示程序）
 
     - 做水平“六”字手势隐藏键盘，进入手势控制模式。
+  
     ![six](readme.assets/six.png)
+
 + 手势控制模式下：
     - 做水平“OK”手势显示键盘，切换到键盘模式
+  
     ![OK](readme.assets/OK.png)
+  
     - 做`“1”`字手势执行`img`对应操作
     - 做`“2”`字手势执行`video`对应操作
     - 做`“3”`字手势执行`表情代号`对应操作（默认设置了一种表情）
